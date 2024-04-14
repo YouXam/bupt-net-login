@@ -60,14 +60,14 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: "--locked --release"
           strip: true
-      - name: Archive binary
-        run: |
-          cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
-          if [ "${{ matrix.platform.os }}" = "windows-latest" ]; then
-            zip -r ${{ matrix.platform.name }} ${{ matrix.platform.bin }}
-          else
-            tar -czf ${{ matrix.platform.name }} ${{ matrix.platform.bin }}
-          fi
+      - name: Copy binary for archive
+        run: cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
+      - name: Archive binary on Windows
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path ${{ matrix.platform.bin }} -DestinationPath ${{ matrix.platform.name }}
+      - name: Archive binary on macOS and Linux
+        if: runner.os != 'Windows'
+        run: tar -czf ${{ matrix.platform.name }} ${{ matrix.platform.bin }}
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
