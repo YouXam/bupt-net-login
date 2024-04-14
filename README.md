@@ -31,7 +31,7 @@ Options:
   -p, --password <PASSWORD>      BUPT netaccount password
   -s, --save                     Whether to save password
   -k, --keep-alive               Whether to keep alive
-  -i, --interval <INTERVAL>      Interval to keep alive in seconds [default: 300]
+  -i, --interval <INTERVAL>      Interval to keep alive in seconds [default: 1800]
   -h, --help                     Print help
   -V, --version                  Print version
 ```

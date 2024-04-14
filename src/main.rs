@@ -241,7 +241,7 @@ struct Args {
     keep_alive: bool,
 
     /// Interval to keep alive in seconds
-    #[arg(short, long, default_value = "300")]
+    #[arg(short, long, default_value = "1800")]
     interval: u64,
 }
 
