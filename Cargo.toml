@@ -1,6 +1,6 @@
 [package]
 name = "bupt-net-login"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A simple tool to login BUPT net using student ID and password."
 readme = "README.md"

@@ -15,6 +15,8 @@ use std::path::PathBuf;
 use url::Url;
 
 static mut PRINT_TIME: bool = false;
+const TEST_URL: &str = "http://www.msftconnecttest.com/connecttest.txt";
+const TEST_KEYWORD: &str = "Microsoft Connect Test";
 
 fn log(message: &str) {
     unsafe {
@@ -57,7 +59,7 @@ async fn auth(
         .await?;
 
     if response.status().is_success() {
-        if check_status("http://captive.apple.com/").await {
+        if check_status(TEST_URL).await {
             log!("Successfully logged in.");
             Ok(true)
         } else {
@@ -88,7 +90,7 @@ async fn check_status(check_url: &str) -> bool {
         Ok(response) => {
             if response.status().is_success() {
                 let body = response.text().await.unwrap_or_else(|_| "".to_string());
-                body.contains("Success")
+                body.contains(TEST_KEYWORD)
             } else {
                 false
             }
@@ -119,7 +121,7 @@ async fn login(
                 url.set_path("/login");
 
                 let body = response.text().await?;
-                if body.contains("Success") {
+                if body.contains(TEST_KEYWORD) {
                     log!("Already logged in");
                     Ok(true)
                 } else {
@@ -160,7 +162,7 @@ async fn try_login(username: &str, password: &str) -> Result<(), ()> {
 
     match login(
         &client,
-        "http://captive.apple.com/?cmd=redirect&arubalp=12345",
+        &(TEST_URL.to_string() + "?cmd=redirect&arubalp=12345"),
         username,
         password,
         false,
@@ -275,7 +277,7 @@ async fn main() -> Result<(), ()> {
         Err(_) => {}
     }
 
-    if student_id.is_none() && password.is_none() && check_status("http://captive.apple.com/").await
+    if student_id.is_none() && password.is_none() && check_status(TEST_URL).await
     {
         println!("Already logged in");
         return Ok(());
