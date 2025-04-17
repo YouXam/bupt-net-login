@@ -1,12 +1,14 @@
 CXXFLAGS := -std=c++17 -Os
+STRIP := strip
+
+ifdef TOOLCHAIN 
+CXX := $(TOOLCHAIN)-g++
+STRIP := $(TOOLCHAIN)-strip
+endif
 
 bupt-net-login: main.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
-	$(CROSS_TRIPLE)-strip bupt-net-login1 || true
-
-cc: main.cpp
-	docker run --rm -v $(shell pwd):/workdir -e CROSS_TRIPLE=$(ARCH) multiarch/crossbuild make
-	mv bupt-net-login bupt-net-login_$(ARCH)
+	$(STRIP) bupt-net-login || true
 
 run: bupt-net-login
 	./bupt-net-login -d

@@ -12,14 +12,6 @@ jobs:
       matrix:
         arch:
           - linux-arm64-musl
-          - linux-mips-lts
-          - linux-mipsel-lts
-          - linux-s390x
-          - linux-ppc64le-lts
-          - linux-riscv32
-          - linux-riscv64
-          - linux-m68k-uclibc
-          - linux-xtensa-uclibc
           - linux-x64
 
     steps:

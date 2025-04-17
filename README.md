@@ -6,10 +6,20 @@
 
 ### C++ 版本
 
-适用于 Linux 系统，可在 misp 架构的路由器上运行。
+适用于 Linux 系统，可在 openwrt 上运行。
 
-在 [releases](https://github.com/YouXam/bupt-net-login/releases) 页面下载最新版本的的以 `
-bupt-net-login_cpp` 开头的压缩包。
+1. 从 GitHub Releases 安装
+
+    在 [releases](https://github.com/YouXam/bupt-net-login/releases) 页面下载最新版本的的以 `bupt-net-login_cpp` 开头的压缩包。
+2. 从源码编译
+
+    如果需要在对应的 OpenWrt 路由器上运行，需要先下载对应的 OpenWrt SDK。
+
+    然后修改 cpp/makefile 添加必要的编译参数，编译。例如：
+
+    ```shell
+    make TOOLCHAIN=mipsel-linux-musl-cross/bin/mipsel-linux-musl
+    ```
 
 ### Rust 版本
 
