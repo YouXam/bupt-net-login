@@ -3,48 +3,47 @@ name: build‑cpp
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        platform:
-          - arch: x86_64-linux-gnu
-            name: bupt-net-login_cpp-x86_64-linux.tar.gz
-          - arch: arm-linux-gnueabi
-            name: bupt-net-login_cpp-arm-linux-gnueabi.tar.gz
-          - arch: arm-linux-gnueabihf
-            name: bupt-net-login_cpp-arm-linux-gnueabihf.tar.gz
-          - arch: aarch64-linux-gnu
-            name: bupt-net-login_cpp-aarch64-linux-gnu.tar.gz
-          - arch: mipsel-linux-gnu
-            name: bupt-net-login_cpp-mipsel-linux-gnu.tar.gz
-          - arch: powerpc64le-linux-gnu
-            name: bupt-net-login_cpp-powerpc64le-linux-gnu.tar.gz
+        arch:
+          - linux-arm64-musl
+          - linux-mips-lts
+          - linux-mipsel-lts
+          - linux-s390x
+          - linux-ppc64le-lts
+          - linux-riscv32
+          - linux-riscv64
+          - linux-m68k-uclibc
+          - linux-xtensa-uclibc
+          - linux-x64
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Build ${{ matrix.platform.arch }}
+      - name: Build ${{ matrix.arch }}
         run: |
           cd cpp
           docker run --rm \
-            -v "$PWD":/workdir \
-            -e CROSS_TRIPLE=${{ matrix.platform.arch }} \
-            multiarch/crossbuild \
+            -v "$PWD":/work \
+            dockcross/${{ matrix.arch }} \
             make
 
       - name: Archive binary
         run: |
           mv cpp/bupt-net-login .
-          tar -czf ${{ matrix.platform.name }} bupt-net-login
+          tar -czf bupt-net-login_cpp-${{ matrix.arch }} bupt-net-login
 
       - name: Upload binary to release
         uses: softprops/action-gh-release@v2
+        if:
+          github.event.action == 'published'
         with:
-          files: ${{ matrix.platform.name }}
+          files: bupt-net-login_cpp-${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
