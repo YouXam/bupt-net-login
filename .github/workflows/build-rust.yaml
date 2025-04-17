@@ -1,9 +1,8 @@
 name: build-rust
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published] 
 
 jobs:
   build-others:
