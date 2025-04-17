@@ -37,13 +37,13 @@ jobs:
       - name: Archive binary
         run: |
           mv cpp/bupt-net-login .
-          tar -czf bupt-net-login_cpp-${{ matrix.arch }} bupt-net-login
+          tar -czf bupt-net-login_cpp-${{ matrix.arch }}.tar.gz bupt-net-login
 
       - name: Upload binary to release
         uses: softprops/action-gh-release@v2
         if:
           github.event.action == 'published'
         with:
-          files: bupt-net-login_cpp-${{ matrix.arch }}
+          files: bupt-net-login_cpp-${{ matrix.arch }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
