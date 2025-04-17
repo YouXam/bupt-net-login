@@ -65,8 +65,9 @@ jobs:
       - name: Archive binary on macOS and Linux
         if: runner.os != 'Windows'
         run: tar -czf ${{ matrix.platform.name }} ${{ matrix.platform.bin }}
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
+      - name: Upload asset to release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ matrix.platform.name }}
-          path: ${{ matrix.platform.name }}
+          files: ${{ matrix.platform.name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
