@@ -15,10 +15,50 @@
 
     如果需要在对应的 OpenWrt 路由器上运行，需要先下载对应的 OpenWrt SDK。
 
-    然后修改 cpp/makefile 添加必要的编译参数，编译。例如：
+    然后修改 cpp/makefile 添加必要的编译参数，编译。
+    
+    例如：
+
+    ```makefile
+    CXXFLAGS := -std=c++17 -Os -static-libstdc++ -march=mips32r2 -fPIE -pie -Wl,--dynamic-linker=/lib/ld-musl-mipsel-sf.so.1
+    # ...
+    ```
 
     ```shell
     make TOOLCHAIN=mipsel-linux-musl-cross/bin/mipsel-linux-musl
+    ```
+3. 安装
+    以 OpenWrt 为例，创建 `/etc/init.d/bupt-net-login` 文件，内容如下：
+
+    ```shell
+    #!/bin/sh /etc/rc.common
+    # Copyright (C) 2025 YouXam
+    # bupt-net-login OpenWrt service
+
+    START=90
+    STOP=10
+    USE_PROCD=1
+
+    start_service() {
+        procd_open_instance
+        procd_set_param command /usr/bin/bupt-net-login.cpp -o /root/.bupt-net-login.log -s 128K -i 300
+        procd_set_param stdout 1
+        procd_set_param stderr 1
+        procd_set_param respawn
+        procd_close_instance
+    }
+
+    stop() {
+        procd_killall
+    }
+    ```
+
+    然后 enable 并启动服务：
+
+    ```shell
+    chmod +x /etc/init.d/bupt-net-login
+    /etc/init.d/bupt-net-login enable
+    /etc/init.d/bupt-net-login start
     ```
 
 ### Rust 版本
