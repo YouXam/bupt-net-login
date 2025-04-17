@@ -32,7 +32,7 @@ jobs:
           docker run --rm \
             -v "$PWD":/work \
             dockcross/${{ matrix.arch }} \
-            make
+            bash -lc "make"
 
       - name: Archive binary
         run: |
@@ -47,3 +47,10 @@ jobs:
           files: bupt-net-login_cpp-${{ matrix.arch }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload binary to artifact
+        if:
+          github.event.action == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          path: bupt-net-login_cpp-${{ matrix.arch }}.tar.gz
