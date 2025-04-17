@@ -1,28 +1,62 @@
 # bupt-net-login
 
-A simple tool to login BUPT net using student ID and password.
+登录北邮校园网的命令行工具
 
-## Installation
+## 安装
 
-### From crates.io
+### C++ 版本
 
-```
-cargo install bupt-net-login
-```
+适用于各种 Linux 系统，兼容 x86, x86_64, arm, arm64, mipsel 和 powerpc64le 架构。
 
-### From release
+在 [releases](https://github.com/YouXam/bupt-net-login/releases) 页面下载最新版本的的以 `
+bupt-net-login_cpp` 开头的压缩包。
 
-Download the latest release from [releases](https://github.com/YouXam/bupt-net-login/releases).
+### Rust 版本
+
+适用于 arm 和 x86_64 架构的 Linux、 macOS 和 Windows 系统。
+
+
+1. 从 crates.io 安装
+
+    ```
+    cargo install bupt-net-login
+    ```
+2. 从 GitHub Releases 安装
+    
+    在 [releases](https://github.com/YouXam/bupt-net-login/releases) 页面下载最新版本的的以 `
+    bupt-net-login_rust` 开头的压缩包。
 
 ## Usage
+
+### C++ 版本
 
 ```shell
 $ bupt-net-login -h
 bupt-net-login
 
+  登录北邮校园网的命令行工具
+  凭据读取顺序: 环境变量 -> 配置文件 (~/.bupt-net-login) -> 交互输入。
+
+  版权所有: YouXam (github.com/YouXam/bupt-net-login)
+
+使用方式: cpp/bupt-net-login [OPTIONS]
+
+选项:
+  -o, --log-file FILE    将日志写入 FILE
+  -s, --max-size SIZE    日志轮转大小 (如 1M)
+  -i, --interval SEC     每 SEC 秒循环一次（默认单次运行）
+  -d, --debug            输出调试信息
+  -h, --help             显示此帮助
+```
+
+### Rust 版本
+
+```shell
+bupt-net-login
+
   A simple tool to login BUPT net using student ID and password.
 
-  Copyright by YouXam.
+  Copyright by YouXam (github.com/YouXam/bupt-net-login).
 
 Usage: bupt-net-login [OPTIONS]
 
