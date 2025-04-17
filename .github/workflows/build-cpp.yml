@@ -32,7 +32,7 @@ jobs:
           docker run --rm \
             -v "$PWD":/work \
             dockcross/${{ matrix.arch }} \
-            bash -lc "make"
+            make
 
       - name: Archive binary
         run: |
