@@ -6,7 +6,7 @@
 
 ### C++ 版本
 
-适用于各种 Linux 系统，兼容 x86, x86_64, arm, arm64, mipsel 和 powerpc64le 架构。
+适用于 Linux 系统，可在 misp 架构的路由器上运行。
 
 在 [releases](https://github.com/YouXam/bupt-net-login/releases) 页面下载最新版本的的以 `
 bupt-net-login_cpp` 开头的压缩包。
