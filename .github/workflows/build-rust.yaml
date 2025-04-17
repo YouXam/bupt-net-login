@@ -2,7 +2,7 @@ name: build-rust
 
 on:
   release:
-    types: [published] 
+    types: [created] 
 
 jobs:
   build-others:
