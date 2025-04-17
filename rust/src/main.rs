@@ -1,22 +1,20 @@
 use std::process::exit;
 
-use async_recursion::async_recursion;
 use chrono;
 use clap::Parser;
 use dirs_next::config_dir;
-use reqwest::header::{HeaderValue, COOKIE, SET_COOKIE};
-use reqwest::{Client, Error};
 use rpassword::prompt_password;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
+use std::thread;
+use std::time::Duration;
 use url::Url;
 
 static mut PRINT_TIME: bool = false;
-const TEST_URL: &str = "http://www.msftconnecttest.com/connecttest.txt";
-const TEST_KEYWORD: &str = "Microsoft Connect Test";
+const TEST_URL: &str = "http://connect.rom.miui.com/generate_204";
 
 fn log(message: &str) {
     unsafe {
@@ -39,144 +37,102 @@ macro_rules! log {
     }};
 }
 
-async fn auth(
-    client: &Client,
-    login_url: Url,
-    cookies: &str,
-    username: &str,
-    password: &str,
-) -> Result<bool, Error> {
+fn auth(login_url: Url, cookies: &str, username: &str, password: &str) -> bool {
     log!(
         "Authenticating to URL {} using account {}...",
-        login_url.to_string(),
+        login_url,
         username
     );
-    let response = client
-        .post(&login_url.to_string())
-        .header(COOKIE, cookies)
-        .form(&[("user", username), ("pass", password)])
-        .send()
-        .await?;
+    let body = serde_urlencoded::to_string([("user", username), ("pass", password)]).unwrap();
+    let resp = minreq::post(login_url.as_str())
+        .with_header("Cookie", cookies)
+        .with_header("Content-Type", "application/x-www-form-urlencoded")
+        .with_body(body)
+        .send();
 
-    if response.status().is_success() {
-        if check_status(TEST_URL).await {
-            log!("Successfully logged in.");
-            Ok(true)
-        } else {
-            let body = response.text().await?;
-            let reason =
-                body.find("<div class=\"ui error message\">")
-                    .map_or("Unknown error", |start| {
-                        &body[start..].find("</div>").map_or("Unknown error", |end| {
-                            &body[(start + 30)..(start + end)].trim()
-                        })
-                    });
-            log!("\tError: {}", reason);
-            log!("Failed to login. Please check username and password.");
-            Ok(false)
-        }
-    } else {
-        log!("Failed to send login request. Please check network connection");
-        match response.error_for_status() {
-            Ok(_res) => exit(1),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-async fn check_status(check_url: &str) -> bool {
-    let client = Client::new();
-    match client.get(check_url).send().await {
-        Ok(response) => {
-            if response.status().is_success() {
-                let body = response.text().await.unwrap_or_else(|_| "".to_string());
-                body.contains(TEST_KEYWORD)
+    match resp {
+        Ok(r) => {
+            if r.status_code == 200 {
+                if check_status(TEST_URL) {
+                    log!("Successfully logged in.");
+                    return true;
+                }
+                let body = r.as_str().unwrap_or_default();
+                let reason = body
+                    .find("<div class=\"ui error message\">")
+                    .and_then(|start| {
+                        body[start..]
+                            .find("</div>")
+                            .map(|end| body[start + 30..start + end].trim().to_string())
+                    })
+                    .unwrap_or_else(|| "Unknown error".into());
+                log!("\tError: {}", reason);
+                log!("Failed to login. Please check username and password.");
+                false
             } else {
+                log!("Login request failed: HTTP {}", r.status_code);
                 false
             }
         }
-        Err(_) => false,
+        Err(e) => {
+            log!("Failed to send login request: {}", e);
+            false
+        }
     }
 }
 
-#[async_recursion]
-async fn login(
-    client: &Client,
-    redirected_auth_url: &str,
-    username: &str,
-    password: &str,
-    retry: bool,
-) -> Result<bool, Error> {
-    match client.get(redirected_auth_url).send().await {
-        Ok(response) => {
-            if response.status().is_success() {
-                let cookies = response
-                    .headers()
-                    .get(SET_COOKIE)
-                    .cloned()
-                    .unwrap_or_else(|| HeaderValue::from_static(""));
+fn check_status(url: &str) -> bool {
+    let resp = minreq::get(url)
+        .send();
+    matches!(resp, Ok(r) if r.status_code==204)
+}
 
-                let mut url = response.url().clone();
-                url.set_query(None);
-                url.set_path("/login");
+fn login(redirected_auth_url: &str, username: &str, password: &str, retry: bool) -> bool {
+    let resp = minreq::get(redirected_auth_url)
+        .send();
 
-                let body = response.text().await?;
-                if body.contains(TEST_KEYWORD) {
-                    log!("Already logged in");
-                    Ok(true)
-                } else {
-                    auth(
-                        client,
-                        url,
-                        cookies.to_str().unwrap_or(""),
-                        username,
-                        password,
-                    )
-                    .await
-                }
-            } else {
-                log!("Failed to check login status. Please check network connection");
-                Ok(false)
+    match resp {
+        Ok(r) => {
+            if r.status_code == 204 {
+                log!("Already logged in");
+                return true;
             }
+            let cookies = &r
+                .headers
+                .get("set-cookie")
+                .expect("Failed to get cookies");
+            let mut url = url::Url::parse(&r.url.to_string()).unwrap();
+            url.set_path("/login");
+            url.set_query(None);
+            auth(url, cookies, username, password)
         }
         Err(e) => {
+            log!("Encountered an error: {}", e);
             if retry {
-                Err(e)
+                false
             } else {
-                log!("{}", e);
                 login(
-                    client,
                     "http://1.2.3.4/?cmd=redirect&arubalp=12345",
                     username,
                     password,
                     true,
                 )
-                .await
             }
         }
     }
 }
 
-async fn try_login(username: &str, password: &str) -> Result<(), ()> {
-    let client = Client::new();
-
-    match login(
-        &client,
-        &(TEST_URL.to_string() + "?cmd=redirect&arubalp=12345"),
+fn try_login(username: &str, password: &str) -> Result<(), ()> {
+    log!("Trying to login...");
+    if login(
+        &(TEST_URL.to_owned() + "?cmd=redirect&arubalp=12345"),
         username,
         password,
         false,
-    )
-    .await
-    {
-        Ok(succeed) => {
-            if succeed {
-                Ok(())
-            } else {
-                Err(())
-            }
-        }
-        Err(_) => Err(()),
+    ) {
+        Ok(())
+    } else {
+        Err(())
     }
 }
 
@@ -199,32 +155,29 @@ fn get_config_path() -> io::Result<PathBuf> {
 
 fn save_credentials(username: &str, password: &str) -> io::Result<()> {
     let credentials = Credentials {
-        username: username.to_string(),
-        password: password.to_string(),
+        username: username.into(),
+        password: password.into(),
     };
     let path = get_config_path()?;
-    let mut file = File::create(path.clone())?;
-    let data = serde_json::to_string_pretty(&credentials)?;
-    file.write_all(data.as_bytes())?;
+    let mut file = File::create(&path)?;
+    file.write_all(serde_json::to_string_pretty(&credentials)?.as_bytes())?;
     println!("Credentials saved to {}", path.to_string_lossy());
     Ok(())
 }
 
 fn load_credentials() -> io::Result<Credentials> {
     let path = get_config_path()?;
-    let mut file = File::open(path)?;
     let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    let credentials = serde_json::from_str(&contents)?;
-    Ok(credentials)
+    File::open(path)?.read_to_string(&mut contents)?;
+    Ok(serde_json::from_str(&contents)?)
 }
 
 #[derive(Parser, Debug)]
-#[command(version, about = format!("{}
-
-  A simple tool to login BUPT net using student ID and password.
-
-  Copyright by {} (github.com/YouXam/bupt-net-login).", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_AUTHORS")), long_about = None)]
+#[command(version, about = format!(
+    "{}\n\n  A simple tool to login BUPT net using student ID and password.\n\n  Copyright by {} (github.com/YouXam/bupt-net-login).",
+    env!("CARGO_PKG_NAME"),
+    env!("CARGO_PKG_AUTHORS")
+))]
 struct Args {
     /// BUPT student ID
     #[arg(short = 'u', long)]
@@ -251,85 +204,61 @@ fn input(prompt: &str, default: &str) -> String {
     print!("{}", prompt);
     io::stdout().flush().unwrap();
     let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read from stdin");
-    input.trim().is_empty().then(|| input = default.to_owned());
-    input
+    io::stdin().read_line(&mut input).expect("stdin error");
+    if input.trim().is_empty() { default.to_owned() } else { input.trim().into() }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), ()> {
+fn main() -> Result<(), ()> {
     let args = Args::parse();
     let mut saved_credentials = false;
 
     let mut student_id = args.student_id;
     let mut password = args.password;
 
-    match load_credentials() {
-        Ok(credentials) => {
-            saved_credentials = true;
-            if student_id.is_none() && password.is_none() {
-                student_id = Some(credentials.username);
-                password = Some(credentials.password);
-            }
+    if let Ok(c) = load_credentials() {
+        saved_credentials = true;
+        if student_id.is_none() && password.is_none() {
+            student_id = Some(c.username);
+            password = Some(c.password);
         }
-        Err(_) => {}
     }
 
-    if student_id.is_none() && password.is_none() && check_status(TEST_URL).await
-    {
-        println!("Already logged in");
-        return Ok(());
+    if student_id.is_none() && password.is_none() {
+        log!("Checking network...");
+        if check_status(TEST_URL) {
+            println!("Already logged in");
+            return Ok(());
+        }
     }
 
     while student_id.is_none() {
-        let student_id_input = input("Enter your student ID: ", "");
-        if !student_id_input.is_empty() {
-            student_id = Some(student_id_input);
-        }
+        let in_id = input("Enter your student ID: ", "");
+        if !in_id.is_empty() { student_id = Some(in_id); }
     }
 
     let password = match password {
         Some(p) => p,
         None => prompt_password("Password: ").unwrap_or_else(|e| {
-            println!("Failed to read password from stdin: {}", e);
+            println!("Failed to read password: {}", e);
             exit(1);
         }),
     };
-
-    if password.is_empty() {
-        println!("Password cannot be empty.");
-        exit(1);
-    }
+    if password.is_empty() { println!("Password cannot be empty."); exit(1); }
 
     if let Some(user) = student_id {
-        if args.keep_alive {
-            unsafe {
-                PRINT_TIME = true;
-            }
-        }
-        try_login(&user, &password).await?;
+        if args.keep_alive { unsafe { PRINT_TIME = true; } }
+        try_login(&user, &password)?;
         if args.save {
-            save_credentials(&user, &password).is_err().then(|| {
-                println!("Failed to save credentials");
-                exit(1);
-            });
-        } else if !saved_credentials
-            && input("Save password ([y]/n)? ", "y").trim().to_lowercase() == "y"
-        {
-            save_credentials(&user, &password).is_err().then(|| {
-                println!("Failed to save credentials");
-                exit(1);
-            });
+            if save_credentials(&user, &password).is_err() { println!("Save failed"); exit(1); }
+        } else if !saved_credentials && input("Save password ([y]/n)? ", "y").to_lowercase() == "y" {
+            if save_credentials(&user, &password).is_err() { println!("Save failed"); exit(1); }
         }
         if args.keep_alive {
             loop {
-                tokio::time::sleep(tokio::time::Duration::from_secs(args.interval)).await;
-                try_login(&user, &password).await?;
+                thread::sleep(Duration::from_secs(args.interval));
+                try_login(&user, &password)?;
             }
         }
     }
-
     Ok(())
 }
