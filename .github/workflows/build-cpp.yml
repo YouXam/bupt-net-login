@@ -50,7 +50,7 @@ jobs:
 
       - name: Upload binary to artifact
         if:
-          github.event.action == 'workflow_dispatch'
+          github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           path: bupt-net-login_cpp-${{ matrix.arch }}.tar.gz
