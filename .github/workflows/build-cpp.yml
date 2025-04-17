@@ -1,0 +1,50 @@
+name: build‑cpp
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform:
+          - arch: x86_64-linux-gnu
+            name: bupt-net-login_cpp-x86_64-linux.tar.gz
+          - arch: arm-linux-gnueabi
+            name: bupt-net-login_cpp-arm-linux-gnueabi.tar.gz
+          - arch: arm-linux-gnueabihf
+            name: bupt-net-login_cpp-arm-linux-gnueabihf.tar.gz
+          - arch: aarch64-linux-gnu
+            name: bupt-net-login_cpp-aarch64-linux-gnu.tar.gz
+          - arch: mipsel-linux-gnu
+            name: bupt-net-login_cpp-mipsel-linux-gnu.tar.gz
+          - arch: powerpc64le-linux-gnu
+            name: bupt-net-login_cpp-powerpc64le-linux-gnu.tar.gz
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.platform.arch }}
+        run: |
+          cd cpp
+          docker run --rm \
+            -v "$PWD":/workdir \
+            -e CROSS_TRIPLE=${{ matrix.platform.arch }} \
+            multiarch/crossbuild \
+            make
+
+      - name: Archive binary
+        run: |
+          mv cpp/bupt-net-login .
+          tar -czf ${{ matrix.platform.name }} bupt-net-login
+
+      - name: Upload binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bupt-net-login_${{ matrix.platform.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

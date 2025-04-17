@@ -1,4 +1,4 @@
-name: build
+name: build-rust
 
 on:
   push:
@@ -15,35 +15,35 @@ jobs:
             os: macOS-latest
             target: x86_64-apple-darwin
             bin: bupt-net-login
-            name: bupt-net-login_darwin-x86_64.tar.gz
+            name: bupt-net-login_rust-darwin-x86_64.tar.gz
             command: build
 
           - release_for: macOS-aarch64
             os: macOS-latest
             target: aarch64-apple-darwin
             bin: bupt-net-login
-            name: bupt-net-login_darwin-aarch64.tar.gz
+            name: bupt-net-login_rust-darwin-aarch64.tar.gz
             command: build
 
           - release_for: Windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: bupt-net-login.exe
-            name: bupt-net-login-windows-x86_64.zip
+            name: bupt-net-login_rust-windows-x86_64.zip
             command: build
 
           - release_for: Linux-x86_64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             bin: bupt-net-login
-            name: bupt-net-login_linux-x86_64.tar.gz
+            name: bupt-net-login_rust-linux-x86_64.tar.gz
             command: build
 
           - release_for: Linux-arm
             os: ubuntu-latest
             target: arm-unknown-linux-gnueabi
             bin: bupt-net-login
-            name: bupt-net-login_linux-arm.tar.gz
+            name: bupt-net-login_rust-linux-arm.tar.gz
             command: build
 
     runs-on: ${{ matrix.platform.os }}
@@ -55,6 +55,7 @@ jobs:
         with:
           command: ${{ matrix.platform.command }}
           target: ${{ matrix.platform.target }}
+          working-directory: ./rust
           args: "--locked --release"
           strip: true
       - name: Copy binary for archive
@@ -66,7 +67,7 @@ jobs:
         if: runner.os != 'Windows'
         run: tar -czf ${{ matrix.platform.name }} ${{ matrix.platform.bin }}
       - name: Upload binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform.name }}
           path: ${{ matrix.platform.name }}

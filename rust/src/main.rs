@@ -224,7 +224,7 @@ fn load_credentials() -> io::Result<Credentials> {
 
   A simple tool to login BUPT net using student ID and password.
 
-  Copyright by {}.", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_AUTHORS")), long_about = None)]
+  Copyright by {} (github.com/YouXam/bupt-net-login).", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_AUTHORS")), long_about = None)]
 struct Args {
     /// BUPT student ID
     #[arg(short = 'u', long)]
