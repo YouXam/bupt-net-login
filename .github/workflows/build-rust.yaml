@@ -58,7 +58,7 @@ jobs:
           args: "--locked --release"
           strip: true
       - name: Copy binary for archive
-        run: cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
+        run: cp rust/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
       - name: Archive binary on Windows
         if: runner.os == 'Windows'
         run: Compress-Archive -Path ${{ matrix.platform.bin }} -DestinationPath ${{ matrix.platform.name }}
