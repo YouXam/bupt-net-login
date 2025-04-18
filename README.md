@@ -89,7 +89,7 @@ bupt-net-login
 
   版权所有: YouXam (github.com/YouXam/bupt-net-login)
 
-使用方式: cpp/bupt-net-login [OPTIONS]
+使用方式: bupt-net-login [OPTIONS]
 
 选项:
   -o, --log-file FILE    将日志写入 FILE
