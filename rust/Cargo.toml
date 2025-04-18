@@ -19,7 +19,6 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-async-recursion = "1.1.1"
 chrono = "0.4.40"
 clap = { version = "4.5.36", features = ["derive"] }
 dirs-next = "2.0.0"
