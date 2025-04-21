@@ -1,5 +1,5 @@
 // Author: YouXam (github.com/YouXam)
-// License: GPL‑2.0+
+// License: GPL‑3.0
 
 #include <arpa/inet.h>
 #include <netdb.h>
